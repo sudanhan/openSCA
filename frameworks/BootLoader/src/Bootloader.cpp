@@ -43,12 +43,12 @@
 #include "Boost_utils.h"
 
 const std::string
-checkConfigInfo(
+checkConfigInfo(//函数功能：返回值string格式，检查user定义的item项是否能够找到，找不到返回"cant find item"
     ConfigParser * configParser,
     const char * item);
 
 void
-splitString(
+splitString(//函数功能：无返回值，在context字符串里找splitstr字符串，去掉匹配上splitstr的剩下的组合成字符串
     const std::string & context,
     std::vector<std::string> & subStrs,
     const std::string & splitStr);
@@ -58,18 +58,20 @@ extern "C"
 int launch_opensca(int argc, char* argv[])
 #elif defined __SDS_OS_LINUX__
 int main(int argc, char * argv[])
-#endif
+#endif//根据vxwork环境或者linux环境给出不同的函数定义
 {
-	createSharedMemory(SCA_SHM, SCA_SHM_SIZE);
+	createSharedMemory(SCA_SHM, SCA_SHM_SIZE);//Boost_utils.h定义Create a shared memory with given name and size
 	set_debug_level(0);
 	set_rte_debug_level(0);
 	DEBUG(5, Bootloader_main, "start...")
     std::string exePath = getConfigFilePathByExecutablePath();
-    setConfigFilePathToSHM(exePath.c_str());
+    setConfigFilePathToSHM(exePath.c_str());//include\runtime_env\utils.h 设置配置文件路径到
     char openScaPath[64];
     getConfigFilePathFromSHM(openScaPath, sizeof(openScaPath));
   	ConfigParser configParser(openScaPath);
 	DEBUG(5, Bootloader_main, "Test BootLoader configParser end...")
+
+	/*fsRoot和sdrRoot的含义没有弄明白*/
 	std::string fsRoot = checkConfigInfo(&configParser, CONSTANT::FSROOT);
 	if ("" == fsRoot) {
 		DEBUG(0, Bootloader_main, "Test BootLoader first checkConfigInfo...")
@@ -89,14 +91,17 @@ int main(int argc, char * argv[])
 	std::string snFile = const_cast<char*>(CONSTANT::SNFILE);
 	FileSystem_impl* fileSystemImpl = new FileSystem_impl(fsRoot.c_str());
 	std::string snPath = "/" + sdrRoot + "/" + snFile;
-	std::string snFilePath = fsRoot + snPath;
+	std::string snFilePath = fsRoot + snPath;//snfile整个框架只有这里定义和赋值了，不知道有什么用？
 
 #ifdef __SDS_OS_VXWORKS__
 	domainMgrMtx = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
 	devMgrMtx = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
 	sysMgrMtx = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
 #endif
-
+//查找SPD，DCD和DMD文件的地址：
+// SPD:Software Package Descrpitor 软件包描述符
+// DCD:Device Configuration Descriptor 设备配置描述符 
+// DMD:DomainManager Configuration Descriptor 域管理器配置描述符
 	std::string namingServiceSPDPath =
 	    checkConfigInfo(&configParser, CONSTANT::NAMING_SERVICE_SPDPATH);
 	if ("" == namingServiceSPDPath) {
@@ -115,6 +120,7 @@ int main(int argc, char * argv[])
 		return -1;
 	}
 
+//初始化launchnode操作，启动平台Platform顺序为：命名服务-域管理器-设备管理器
 	LaunchNode* launchNode = new LaunchNode(fsRoot, sdrRoot);
 	DEBUG(0, Bootloader_main, "BootLoader launch namingservice start...")
 	DEBUG(5, launch_opensca, "execute namingservice")
@@ -146,7 +152,7 @@ int main(int argc, char * argv[])
 
 	DEBUG(0, Bootloader_main, "leaving...")
 	return 0;
-}
+}//end of main
 
 const std::string
 checkConfigInfo(
@@ -165,18 +171,18 @@ splitString(
     const std::string & context,
     std::vector<std::string> & subStrs,
     const std::string & splitStr) {
-	std::string::size_type pos1;
+	std::string::size_type pos1;//boost intrusive_fwd实现，保存string或者vector对象的长度
 	std::string::size_type pos2;
-	pos2 = context.find(splitStr);
+	pos2 = context.find(splitStr);//在context字符串里找splitstr字符串，后者作为分割标示
 	pos1 = 0;
 
-	while (string::npos != pos2) {
-		subStrs.push_back(context.substr(pos1, pos2 - pos1));
+	while (string::npos != pos2) {//直到string末尾，npos标示end of string
+		subStrs.push_back(context.substr(pos1, pos2 - pos1));//vector标准库，在subStr末尾添加string，位置从pos1到pos2
 
-		pos1 = pos2 + splitStr.size();
-		pos2 = context.find(splitStr, pos1);
+		pos1 = pos2 + splitStr.size();//更新字符查找起点
+		pos2 = context.find(splitStr, pos1);//从下标pos1开始找splitStr
 	}
 
-	if (pos1 != context.length())
+	if (pos1 != context.length())//如果pos1没有到context结尾，就把pos1到结尾都添加到subStr里面
 		subStrs.push_back(context.substr(pos1));
 }

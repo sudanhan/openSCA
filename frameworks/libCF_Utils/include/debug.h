@@ -46,8 +46,7 @@
 #endif
 
 void 
-set_debug_level(
-	int level);
+set_debug_level(int level);
 
 #define  FUN_DEBUG_EN        0
 #define  FUN_WARNING_EN      0
