@@ -316,9 +316,9 @@ LaunchNode::executeNamingService(
 	loadFile(fileSys, spdParser, spdflPath);
 #endif
 
-	TaskParamsType taskParams = getTaskParamsFromSPD(spdParser);
+	TaskParamsType taskParams = getTaskParamsFromSPD(spdParser);//提取任务参数
 	ExecParamsType execParams =
-	    getExecParamsFromPRF(fileSys, spdParser, spdflPath);
+	    getExecParamsFromPRF(fileSys, spdParser, spdflPath);//提取执行参数
 
 #ifdef __SDS_OS_VXWORKS__
 	int argc = execParams.size() * 2 + 2 + 1;
@@ -354,7 +354,7 @@ LaunchNode::executeNamingService(
 	bzero(argv, argc);
 
 	// -ORB parameters should be neighbouring, otherwise will parse failed
-	changeParamsFormat(argv + 2, execParams, taskParams);
+	changeParamsFormat(argv + 2, execParams, taskParams);// 这里为什么要+2？因为要在0和1的位置写字符，将执行参数和任务参数转化为字符串
 
     char openScaPath[64];
     getConfigFilePathFromSHM(openScaPath, sizeof(openScaPath));
