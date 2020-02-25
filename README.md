@@ -1,3 +1,9 @@
+# 项目目的
+- 用于课题组小范围CodeReview，不改变源码
+- 增加注释，提高代码可读性，加强与SCA-2.2.2标准的对应关系
+- 建议配合VSCode, Understand和Github-Desktop工具进行高效的分析和同步更新
+
+以下为openSCA代码的原使用说明（COPYRIGHT belongs to JF）
 # openSCA
 本项目基于SCA2.2.2标准进行开发，完全符合SCA2.2.2标准，已在多个项目中投入使用。<br>
 
