@@ -60,36 +60,44 @@ int launch_opensca(int argc, char* argv[])
 int main(int argc, char * argv[])
 #endif//根据vxwork环境或者linux环境给出不同的函数定义
 {
+	//创建共享内存
 	createSharedMemory(SCA_SHM, SCA_SHM_SIZE);//Boost_utils.h定义Create a shared memory with given name and size
 	set_debug_level(0);
 	set_rte_debug_level(0);
 	DEBUG(5, Bootloader_main, "start...")
+	
+	//将配置文件路径存入共享内存
     std::string exePath = getConfigFilePathByExecutablePath();
     setConfigFilePathToSHM(exePath.c_str());//include\runtime_env\utils.h 设置配置文件路径到
     char openScaPath[64];
+	
+	//获取SCA路径
     getConfigFilePathFromSHM(openScaPath, sizeof(openScaPath));
+	
+	//配置文件解析，参考openSCA.conf
   	ConfigParser configParser(openScaPath);
 	DEBUG(5, Bootloader_main, "Test BootLoader configParser end...")
 
-	/*fsRoot和sdrRoot的含义没有弄明白*/
+	//获取文件系统的根路径
 	std::string fsRoot = checkConfigInfo(&configParser, CONSTANT::FSROOT);
 	if ("" == fsRoot) {
 		DEBUG(0, Bootloader_main, "Test BootLoader first checkConfigInfo...")
 		return -1;
 	}
-
 	DEBUG(5, Bootloader_main, "Test BootLoader first checkConfigInfo end...")
 
+	//获取SDR的路径，参见mnt（mount）文件夹，如SCAplatform
 	std::string sdrRoot = checkConfigInfo(&configParser, CONSTANT::SDRROOT);
 	if ("" == sdrRoot) {
 		DEBUG(0, Bootloader_main, "Test BootLoader second checkConfigInfo...")
 		return -1;
 	}
-
 	DEBUG(5, Bootloader_main, "Test BootLoader second checkConfigInfo end...")
 
+	//实例化文件系统，可以跨平台使用（针对不同系统作不同调用）
 	std::string snFile = const_cast<char*>(CONSTANT::SNFILE);
 	FileSystem_impl* fileSystemImpl = new FileSystem_impl(fsRoot.c_str());
+	//创建snFilePath文件路径（没有用到，冗余）
 	std::string snPath = "/" + sdrRoot + "/" + snFile;
 	std::string snFilePath = fsRoot + snPath;//snfile整个框架只有这里定义和赋值了，不知道有什么用？
 
@@ -98,10 +106,12 @@ int main(int argc, char * argv[])
 	devMgrMtx = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
 	sysMgrMtx = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
 #endif
-//查找SPD，DCD和DMD文件的地址：
-// SPD:Software Package Descrpitor 软件包描述符
-// DCD:Device Configuration Descriptor 设备配置描述符 
-// DMD:DomainManager Configuration Descriptor 域管理器配置描述符
+
+
+	// 获取SPD，DCD和DMD文件的地址：
+		// SPD:Software Package Descrpitor 软件包描述符
+		// DCD:Device Configuration Descriptor 设备管理器的配置描述符 
+		// DMD:DomainManager Configuration Descriptor 域管理器配置描述符
 	std::string namingServiceSPDPath =
 	    checkConfigInfo(&configParser, CONSTANT::NAMING_SERVICE_SPDPATH);
 	if ("" == namingServiceSPDPath) {
@@ -120,7 +130,7 @@ int main(int argc, char * argv[])
 		return -1;
 	}
 
-//初始化launchnode操作，启动平台Platform顺序为：命名服务-域管理器-设备管理器
+	//初始化launchnode操作，启动平台Platform顺序为：命名服务-域管理器-主设备（默认一个）管理器
 	LaunchNode* launchNode = new LaunchNode(fsRoot, sdrRoot);
 	DEBUG(0, Bootloader_main, "BootLoader launch namingservice start...")
 	DEBUG(5, launch_opensca, "execute namingservice")
@@ -143,6 +153,7 @@ int main(int argc, char * argv[])
 
 	DEBUG(5, launch_opensca, "launch opensca platform finish.")
 
+	//销毁和关闭系统
 	delete fileSystemImpl;
 	delete launchNode;
 
